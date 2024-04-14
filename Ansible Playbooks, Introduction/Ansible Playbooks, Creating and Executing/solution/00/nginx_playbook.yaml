@@ -9,6 +9,8 @@
   hosts:
     linux
   # Vars: variables that will apply to the play, on all target systems
+  vars_files:
+    - vars/logos.yaml
 
   # Tasks: the list of tasks that will be executed within the play, this section
   # can also be used for pre and post tasks
@@ -20,19 +22,37 @@
         state: latest
       when: ansible_distribution == 'CentOS' 
     
-    - name: Install Nginx for Centos
-      yum:
+    - name: Install Nginx
+      package:
         name: nginx
-        update_cache: yes
         state: latest
-      when: ansible_distribution == 'CentOS'
-    - name: Install Nginx for Ubuntu
-      apt:
+    - name: Restart Nginx
+      service:
         name: nginx
-        update_cache: yes
+        state: restarted
+      notify: Check http service
+    - name: Replace Index html
+      template:
+        src: templates/index.html-easter_egg.j2
+        dest: "{{ nginx_root_home }}/index.html"
+        mode: '0644'
+    - name: Install unzip
+      package:
+        name: unzip
         state: latest
-      when: ansible_distribution == 'Ubuntu'
+    - name: Unarchive playbook stacker game
+      unarchive:
+        src: files/playbook_stacker.zip
+        dest: "{{ nginx_root_home }}"
+        mode: 0755
+        
+    
   # Handlers: the list of handlers that are executed as a notify key from a task
+  handlers:
+    - name: Check http service
+      uri:
+        url: http://{{ ansible_default_ipv4.address }}
+        status_code: 200
 
 # Three dots indicate the end of a YAML document
 ...

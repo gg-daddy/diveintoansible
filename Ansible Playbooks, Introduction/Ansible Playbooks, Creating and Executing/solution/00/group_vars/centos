@@ -1,3 +1,4 @@
 ---
 ansible_user: root
+nginx_root_home: /usr/share/nginx/html
 ...
